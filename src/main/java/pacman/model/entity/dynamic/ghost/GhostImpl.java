@@ -2,6 +2,7 @@ package pacman.model.entity.dynamic.ghost;
 
 import javafx.scene.image.Image;
 import pacman.model.entity.Renderable;
+import pacman.model.entity.dynamic.ghost.strategy.ChaseMovementStrategy;
 import pacman.model.entity.dynamic.physics.*;
 import pacman.model.level.Level;
 import pacman.model.maze.Maze;
@@ -27,8 +28,9 @@ public class GhostImpl implements Ghost {
     private Set<Direction> possibleDirections;
     private Map<GhostMode, Double> speeds;
     private int currentDirectionCount = 0;
+    private ChaseMovementStrategy movementStrategy;
 
-    public GhostImpl(Image image, BoundingBox boundingBox, KinematicState kinematicState, GhostMode ghostMode, Vector2D targetCorner) {
+    public GhostImpl(Image image, BoundingBox boundingBox, KinematicState kinematicState, GhostMode ghostMode, Vector2D targetCorner, ChaseMovementStrategy strategy) {
         this.image = image;
         this.boundingBox = boundingBox;
         this.kinematicState = kinematicState;
@@ -38,6 +40,7 @@ public class GhostImpl implements Ghost {
         this.targetCorner = targetCorner;
         this.targetLocation = getTargetLocation();
         this.currentDirection = null;
+        this.movementStrategy = strategy;
     }
 
     @Override
@@ -81,7 +84,7 @@ public class GhostImpl implements Ghost {
 
     private Vector2D getTargetLocation() {
         return switch (this.ghostMode) {
-            case CHASE -> this.playerPosition;
+            case CHASE -> this.movementStrategy.getTargetLocation(playerPosition, kinematicState.getPosition(), targetCorner, getPositionBeforeLastUpdate()); // I NEED TO CHANGE THIS TO GET BLINKYS
             case SCATTER -> this.targetCorner;
         };
     }

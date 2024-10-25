@@ -53,7 +53,10 @@ public class GameEngineImpl implements GameEngine {
         renderableFactoryRegistry.registerFactory(RenderableType.DOWN_RIGHT_WALL, new WallFactory(RenderableType.DOWN_RIGHT_WALL));
         renderableFactoryRegistry.registerFactory(RenderableType.PELLET, new PelletFactory());
         renderableFactoryRegistry.registerFactory(RenderableType.PACMAN, new PacmanFactory());
-        renderableFactoryRegistry.registerFactory(RenderableType.GHOST, new GhostFactory());
+        renderableFactoryRegistry.registerFactory(RenderableType.GHOST_BLINKY, new GhostFactory());
+        renderableFactoryRegistry.registerFactory(RenderableType.GHOST_PINKY, new GhostFactory());
+        renderableFactoryRegistry.registerFactory(RenderableType.GHOST_INKY, new GhostFactory());
+        renderableFactoryRegistry.registerFactory(RenderableType.GHOST_CLYDE, new GhostFactory());
         return renderableFactoryRegistry;
     }
 

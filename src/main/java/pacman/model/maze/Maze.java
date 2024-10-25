@@ -60,7 +60,10 @@ public class Maze {
         if (renderable != null) {
             if (renderableType == RenderableType.PACMAN) {
                 this.pacman = renderable;
-            } else if (renderableType == RenderableType.GHOST) {
+            } else if (renderableType == RenderableType.GHOST_BLINKY ||
+                    renderableType == RenderableType.GHOST_PINKY ||
+                    renderableType == RenderableType.GHOST_INKY ||
+                    renderableType == RenderableType.GHOST_CLYDE) {
                 this.ghosts.add(renderable);
             } else if (renderableType == RenderableType.PELLET) {
                 this.pellets.add(renderable);
