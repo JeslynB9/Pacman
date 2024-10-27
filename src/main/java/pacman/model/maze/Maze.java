@@ -65,7 +65,7 @@ public class Maze {
                     renderableType == RenderableType.GHOST_INKY ||
                     renderableType == RenderableType.GHOST_CLYDE) {
                 this.ghosts.add(renderable);
-            } else if (renderableType == RenderableType.PELLET) {
+            } else if (renderableType == RenderableType.PELLET || renderableType == RenderableType.POWER_PELLET) {
                 this.pellets.add(renderable);
             } else {
                 this.isWall.put(formatCoordinates(x, y), true);
