@@ -25,6 +25,7 @@ public class GhostFactory implements RenderableFactory {
     private static final Image INKY_IMAGE = new Image("maze/ghosts/inky.png");
     private static final Image CLYDE_IMAGE = new Image("maze/ghosts/clyde.png");
     private static final Image PINKY_IMAGE = new Image("maze/ghosts/pinky.png");
+    private static final Image FRIGHTENED_IMAGE = new Image("maze/ghosts/frightened.png");
     private static Image GHOST_IMAGE = BLINKY_IMAGE;
     private ChaseMovementStrategy strategy;
     private ScatterMode state = new ScatterMode();
@@ -88,6 +89,8 @@ public class GhostFactory implements RenderableFactory {
 
             return new GhostImpl(
                     GHOST_IMAGE,
+                    GHOST_IMAGE,
+                    FRIGHTENED_IMAGE,
                     boundingBox,
                     kinematicState,
                     targetCorner,

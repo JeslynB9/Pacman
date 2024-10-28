@@ -1,5 +1,6 @@
 package pacman.model.entity.dynamic.ghost;
 
+import javafx.scene.image.Image;
 import pacman.model.entity.dynamic.DynamicEntity;
 import pacman.model.entity.dynamic.ghost.state.GhostModeState;
 import pacman.model.entity.dynamic.player.observer.PlayerPositionObserver;
@@ -29,4 +30,6 @@ public interface Ghost extends DynamicEntity, PlayerPositionObserver {
      * @param ghostModeState mode of the Ghost
      */
     void setGhostMode(GhostModeState ghostModeState);
+
+    void setImage(Image image);
 }

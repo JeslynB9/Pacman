@@ -40,6 +40,7 @@ public class ScatterMode implements GhostModeState {
         System.out.println("Retrieved scatter speed: " + scatterSpeed);
 
         ghost.setSpeed(scatterSpeed);
+        ghost.setImage(ghost.getNormalImage());
 
     }
 

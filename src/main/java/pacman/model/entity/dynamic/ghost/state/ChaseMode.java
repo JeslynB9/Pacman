@@ -24,7 +24,6 @@ public class ChaseMode implements GhostModeState {
         }
 
         System.out.println("Entering chase mode for ghost: " + ghost);
-//        System.out.println("Speeds map before access: " + ghost.getSpeeds());
 
         // Check if "SCATTER" key exists
         if (!ghost.getSpeeds().containsKey("CHASE")) {
@@ -37,12 +36,13 @@ public class ChaseMode implements GhostModeState {
         // Log the retrieved speed
         if (chaseSpeed == null) {
             System.out.println("Chase speed is not set for ghost: " + ghost);
-            return; // Return early if scatterSpeed is null
+            return; // Return early if chaseSpeed is null
         }
 
         System.out.println("Retrieved chase speed: " + chaseSpeed);
 
         ghost.setSpeed(chaseSpeed);
+        ghost.setImage(ghost.getNormalImage());
 
     }
 

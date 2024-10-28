@@ -1,12 +1,13 @@
 package pacman.model.level;
 
+import javafx.scene.image.Image;
 import org.json.simple.JSONObject;
 import pacman.ConfigurationParseException;
 import pacman.model.engine.observer.GameState;
 import pacman.model.entity.Renderable;
 import pacman.model.entity.dynamic.DynamicEntity;
 import pacman.model.entity.dynamic.ghost.Ghost;
-import pacman.model.entity.dynamic.ghost.GhostImpl;
+import pacman.model.entity.dynamic.ghost.state.FrightenedMode;
 import pacman.model.entity.dynamic.ghost.state.GhostModeState;
 import pacman.model.entity.dynamic.ghost.state.ScatterMode;
 import pacman.model.entity.dynamic.physics.PhysicsEngine;
@@ -14,6 +15,7 @@ import pacman.model.entity.dynamic.player.Controllable;
 import pacman.model.entity.dynamic.player.Pacman;
 import pacman.model.entity.staticentity.StaticEntity;
 import pacman.model.entity.staticentity.collectable.Collectable;
+import pacman.model.entity.staticentity.collectable.PowerPellet;
 import pacman.model.level.observer.LevelStateObserver;
 import pacman.model.maze.Maze;
 
@@ -42,6 +44,7 @@ public class LevelImpl implements Level {
     private GameState gameState;
     private List<Renderable> collectables;
     private GhostModeState currentGhostMode;
+    private int frightenedModeTickCount = 0;
 
     public LevelImpl(JSONObject levelConfiguration, Maze maze) {
         this.renderables = new ArrayList<>();
@@ -125,12 +128,27 @@ public class LevelImpl implements Level {
                 tickCount = 0;
             }
         } else {
-            handleGhostModeSwitch();
+            if (frightenedModeTickCount > 0) {
+                // Decrement frightened mode counter
+                frightenedModeTickCount--;
+                if (frightenedModeTickCount == 0) {
+                    // End Frightened mode and return to regular mode sequence
+                    this.currentGhostMode = new ScatterMode();
+                    tickCount = 0; // Reset tickCount for normal mode sequence
+                    for (Ghost ghost : this.ghosts) {
+                        ghost.setGhostMode(this.currentGhostMode); // Switch to Scatter or Chase
+                    }
+                }
+            } else {
+                // Handle regular mode switching if not in Frightened mode
+                handleGhostModeSwitch();
+            }
             updatePlayerImage();
             updateDynamicEntities();
         }
         tickCount++;
     }
+
 
     private void handleGhostModeSwitch() {
         int currentModeLength = modeLengths.getOrDefault(currentGhostMode.getClass().getSimpleName(), 0);
@@ -181,6 +199,12 @@ public class LevelImpl implements Level {
 
     @Override
     public boolean isCollectable(Renderable renderable) {
+        if (renderable instanceof PowerPellet) {
+            frightenedModeTickCount = modeLengths.get("FrightenedMode");
+            for (Ghost ghost : ghosts) {
+                ghost.setGhostMode(new FrightenedMode());
+            }
+        }
         return maze.getPellets().contains(renderable) && ((Collectable) renderable).isCollectable();
     }
 

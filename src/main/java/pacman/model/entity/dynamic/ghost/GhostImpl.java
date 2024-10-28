@@ -18,7 +18,9 @@ public class GhostImpl implements Ghost {
 
     private static final int minimumDirectionCount = 8;
     private final Layer layer = Layer.FOREGROUND;
-    private final Image image;
+    private Image image;
+    private Image normalImage;
+    private Image frightenedImage;
     private final BoundingBox boundingBox;
     private final Vector2D startingPosition;
     private final Vector2D targetCorner;
@@ -34,10 +36,12 @@ public class GhostImpl implements Ghost {
     private final ChaseMovementStrategy movementStrategy;
     private long modeStartTime;
 
-    public GhostImpl(Image image, BoundingBox boundingBox, KinematicState kinematicState, Vector2D targetCorner, ChaseMovementStrategy strategy) {
+    public GhostImpl(Image image, Image normalImage, Image frightenedImage, BoundingBox boundingBox, KinematicState kinematicState, Vector2D targetCorner, ChaseMovementStrategy strategy) {
+        this.normalImage = normalImage;
         this.image = image;
         this.speeds = getSpeeds();
         this.modeLengths = getModeLengths();
+        this.frightenedImage = frightenedImage;
         this.boundingBox = boundingBox;
         this.kinematicState = kinematicState;
         this.startingPosition = kinematicState.getPosition();
@@ -47,19 +51,6 @@ public class GhostImpl implements Ghost {
         this.currentMode = new ScatterMode(); // Start in SCATTER mode
         this.currentMode.enter(this); // Initialize mode-specific settings
         this.modeStartTime = System.currentTimeMillis();
-    }
-
-    private void checkModeDuration() {
-        String currentModeName = currentMode.getClass().getSimpleName();
-        int modeDuration = modeLengths.getOrDefault(currentModeName, Integer.MAX_VALUE); // Get duration in seconds
-
-        long currentTime = System.currentTimeMillis();
-        long elapsedTime = (currentTime - modeStartTime) / 1000; // Convert to seconds
-
-        if (elapsedTime >= modeDuration) {
-            System.out.println("Mode Switched");
-            switchMode(); // Switch to the next mode
-        }
     }
 
     @Override
@@ -80,13 +71,26 @@ public class GhostImpl implements Ghost {
     }
 
     @Override
+    public void setImage(Image image) {
+        this.image = image;
+    }
+
+    public Image getFrightenedImage() {
+        return this.frightenedImage;
+    }
+
+    public Image getNormalImage() {
+        return this.normalImage;
+    }
+
+
+
+    @Override
     public void update() {
         this.updateDirection();
         this.kinematicState.update();
         this.boundingBox.setTopLeft(this.kinematicState.getPosition());
 
-        // Check if the mode time has expired
-//        checkModeDuration();
     }
 
     private void updateDirection() {
@@ -139,12 +143,6 @@ public class GhostImpl implements Ghost {
     public void setGhostMode(GhostModeState newState) {
         this.currentMode = newState;
         this.currentMode.enter(this); // Apply settings specific to this mode
-    }
-
-    public void switchMode() {
-        this.currentMode = currentMode.nextState();
-        currentMode.enter(this); // Apply settings specific to the new mode
-        this.modeStartTime = System.currentTimeMillis(); // Reset the timer
     }
 
     public void setSpeed(double speed) {
@@ -246,4 +244,5 @@ public class GhostImpl implements Ghost {
     public ChaseMovementStrategy getMovementStrategy() {
         return this.movementStrategy;
     }
+
 }

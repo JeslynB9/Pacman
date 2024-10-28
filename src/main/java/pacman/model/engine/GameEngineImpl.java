@@ -5,6 +5,7 @@ import org.json.simple.JSONObject;
 import pacman.model.engine.observer.GameState;
 import pacman.model.engine.observer.GameStateObserver;
 import pacman.model.entity.Renderable;
+import pacman.model.entity.dynamic.ghost.Ghost;
 import pacman.model.entity.dynamic.physics.Direction;
 import pacman.model.factories.*;
 import pacman.model.level.Level;

@@ -6,6 +6,8 @@ import pacman.model.entity.dynamic.physics.*;
 import pacman.model.entity.dynamic.player.observer.PlayerPositionObserver;
 import pacman.model.entity.dynamic.player.observer.PlayerPositionSubject;
 import pacman.model.entity.staticentity.collectable.Collectable;
+import pacman.model.entity.staticentity.collectable.PowerPellet;
+import pacman.model.factories.RenderableType;
 import pacman.model.level.Level;
 
 import java.util.HashSet;
@@ -112,6 +114,9 @@ public class Pacman implements Controllable, PlayerPositionSubject {
     public void collideWith(Level level, Renderable renderable) {
         if (level.isCollectable(renderable)) {
             Collectable collectable = (Collectable) renderable;
+            if (collectable instanceof PowerPellet) {
+
+            }
             level.collect(collectable);
             collectable.collect();
         }
