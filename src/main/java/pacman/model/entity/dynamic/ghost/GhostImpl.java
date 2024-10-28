@@ -2,6 +2,8 @@ package pacman.model.entity.dynamic.ghost;
 
 import javafx.scene.image.Image;
 import pacman.model.entity.Renderable;
+import pacman.model.entity.dynamic.ghost.state.GhostModeState;
+import pacman.model.entity.dynamic.ghost.state.ScatterMode;
 import pacman.model.entity.dynamic.ghost.strategy.ChaseMovementStrategy;
 import pacman.model.entity.dynamic.physics.*;
 import pacman.model.level.Level;
@@ -21,31 +23,55 @@ public class GhostImpl implements Ghost {
     private final Vector2D startingPosition;
     private final Vector2D targetCorner;
     private KinematicState kinematicState;
-    private GhostMode ghostMode;
+    private GhostModeState currentMode; // Use the State pattern for ghost modes
     private Vector2D targetLocation;
     private Vector2D playerPosition;
     private Direction currentDirection;
     private Set<Direction> possibleDirections;
-    private Map<GhostMode, Double> speeds;
+    private Map<String, Double> speeds = new HashMap<>(); // Speeds for each mode
+    private Map<String, Integer> modeLengths = new HashMap<>(); // Speeds for each mode
     private int currentDirectionCount = 0;
-    private ChaseMovementStrategy movementStrategy;
+    private final ChaseMovementStrategy movementStrategy;
+    private long modeStartTime;
 
-    public GhostImpl(Image image, BoundingBox boundingBox, KinematicState kinematicState, GhostMode ghostMode, Vector2D targetCorner, ChaseMovementStrategy strategy) {
+    public GhostImpl(Image image, BoundingBox boundingBox, KinematicState kinematicState, Vector2D targetCorner, ChaseMovementStrategy strategy) {
         this.image = image;
+        this.speeds = getSpeeds();
+        this.modeLengths = getModeLengths();
         this.boundingBox = boundingBox;
         this.kinematicState = kinematicState;
         this.startingPosition = kinematicState.getPosition();
-        this.ghostMode = ghostMode;
-        this.possibleDirections = new HashSet<>();
         this.targetCorner = targetCorner;
-        this.targetLocation = getTargetLocation();
-        this.currentDirection = null;
+        this.possibleDirections = new HashSet<>();
         this.movementStrategy = strategy;
+        this.currentMode = new ScatterMode(); // Start in SCATTER mode
+        this.currentMode.enter(this); // Initialize mode-specific settings
+        this.modeStartTime = System.currentTimeMillis();
+    }
+
+    private void checkModeDuration() {
+        String currentModeName = currentMode.getClass().getSimpleName();
+        int modeDuration = modeLengths.getOrDefault(currentModeName, Integer.MAX_VALUE); // Get duration in seconds
+
+        long currentTime = System.currentTimeMillis();
+        long elapsedTime = (currentTime - modeStartTime) / 1000; // Convert to seconds
+
+        if (elapsedTime >= modeDuration) {
+            System.out.println("Mode Switched");
+            switchMode(); // Switch to the next mode
+        }
     }
 
     @Override
-    public void setSpeeds(Map<GhostMode, Double> speeds) {
+    public void setSpeeds(Map<String, Double> speeds) {
         this.speeds = speeds;
+    }
+    public void setModeLengths(Map<String, Integer> modeLengths) {
+        this.modeLengths = modeLengths;
+    }
+
+    public Map<String, Integer> getModeLengths() {
+        return this.modeLengths;
     }
 
     @Override
@@ -58,17 +84,19 @@ public class GhostImpl implements Ghost {
         this.updateDirection();
         this.kinematicState.update();
         this.boundingBox.setTopLeft(this.kinematicState.getPosition());
+
+        // Check if the mode time has expired
+//        checkModeDuration();
     }
 
     private void updateDirection() {
-        // Ghosts update their target location when they reach an intersection
+        this.targetLocation = currentMode.getTargetLocation(this, playerPosition); // Use current mode
+
         if (Maze.isAtIntersection(this.possibleDirections)) {
-            this.targetLocation = getTargetLocation();
+            this.targetLocation = currentMode.getTargetLocation(this, playerPosition); // Use current mode
         }
 
         Direction newDirection = selectDirection(possibleDirections);
-
-        // Ghosts have to continue in a direction for a minimum time before changing direction
         if (this.currentDirection != newDirection) {
             this.currentDirectionCount = 0;
         }
@@ -82,19 +110,11 @@ public class GhostImpl implements Ghost {
         }
     }
 
-    private Vector2D getTargetLocation() {
-        return switch (this.ghostMode) {
-            case CHASE -> this.movementStrategy.getTargetLocation(playerPosition, kinematicState.getPosition(), targetCorner, getPositionBeforeLastUpdate()); // I NEED TO CHANGE THIS TO GET BLINKYS
-            case SCATTER -> this.targetCorner;
-        };
-    }
-
     private Direction selectDirection(Set<Direction> possibleDirections) {
         if (possibleDirections.isEmpty()) {
             return currentDirection;
         }
 
-        // ghosts have to continue in a direction for a minimum time before changing direction
         if (currentDirection != null && currentDirectionCount < minimumDirectionCount) {
             currentDirectionCount++;
             return currentDirection;
@@ -103,27 +123,37 @@ public class GhostImpl implements Ghost {
         Map<Direction, Double> distances = new HashMap<>();
 
         for (Direction direction : possibleDirections) {
-            // ghosts never choose to reverse travel
             if (currentDirection == null || direction != currentDirection.opposite()) {
                 distances.put(direction, Vector2D.calculateEuclideanDistance(this.kinematicState.getPotentialPosition(direction), this.targetLocation));
             }
         }
 
-        // only go the opposite way if trapped
         if (distances.isEmpty()) {
             return currentDirection.opposite();
         }
 
-        // select the direction that will reach the target location fastest
         return Collections.min(distances.entrySet(), Map.Entry.comparingByValue()).getKey();
     }
 
     @Override
-    public void setGhostMode(GhostMode ghostMode) {
-        this.ghostMode = ghostMode;
-        this.kinematicState.setSpeed(speeds.get(ghostMode));
-        // ensure direction is switched
-        this.currentDirectionCount = minimumDirectionCount;
+    public void setGhostMode(GhostModeState newState) {
+        this.currentMode = newState;
+        this.currentMode.enter(this); // Apply settings specific to this mode
+    }
+
+    public void switchMode() {
+        this.currentMode = currentMode.nextState();
+        currentMode.enter(this); // Apply settings specific to the new mode
+        this.modeStartTime = System.currentTimeMillis(); // Reset the timer
+    }
+
+    public void setSpeed(double speed) {
+        this.kinematicState.setSpeed(speed);
+    }
+
+
+    public Map<String, Double> getSpeeds() {
+        return this.speeds;
     }
 
     @Override
@@ -180,12 +210,12 @@ public class GhostImpl implements Ghost {
 
     @Override
     public void reset() {
-        // return ghost to starting position
         this.kinematicState = new KinematicStateImpl.KinematicStateBuilder()
                 .setPosition(startingPosition)
                 .build();
         this.boundingBox.setTopLeft(startingPosition);
-        this.ghostMode = GhostMode.SCATTER;
+        this.currentMode = new ScatterMode(); // Reset to SCATTER mode
+        this.currentMode.enter(this); // Apply settings for SCATTER mode
         this.currentDirectionCount = minimumDirectionCount;
     }
 
@@ -202,5 +232,18 @@ public class GhostImpl implements Ghost {
     @Override
     public Vector2D getCenter() {
         return new Vector2D(boundingBox.getMiddleX(), boundingBox.getMiddleY());
+    }
+
+    public Vector2D getTargetCorner() {
+        return targetCorner;
+    }
+
+    public Vector2D getBlinkyPosition() {
+        // This method can be adjusted to retrieve Blinky's position if needed
+        return null; // Placeholder for Blinky’s position
+    }
+
+    public ChaseMovementStrategy getMovementStrategy() {
+        return this.movementStrategy;
     }
 }

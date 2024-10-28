@@ -6,7 +6,9 @@ import pacman.model.engine.observer.GameState;
 import pacman.model.entity.Renderable;
 import pacman.model.entity.dynamic.DynamicEntity;
 import pacman.model.entity.dynamic.ghost.Ghost;
-import pacman.model.entity.dynamic.ghost.GhostMode;
+import pacman.model.entity.dynamic.ghost.GhostImpl;
+import pacman.model.entity.dynamic.ghost.state.GhostModeState;
+import pacman.model.entity.dynamic.ghost.state.ScatterMode;
 import pacman.model.entity.dynamic.physics.PhysicsEngine;
 import pacman.model.entity.dynamic.player.Controllable;
 import pacman.model.entity.dynamic.player.Pacman;
@@ -22,7 +24,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Concrete implement of Pac-Man level
+ * Concrete implementation of Pac-Man level
  */
 public class LevelImpl implements Level {
 
@@ -33,32 +35,31 @@ public class LevelImpl implements Level {
     private Controllable player;
     private List<Ghost> ghosts;
     private int tickCount;
-    private Map<GhostMode, Integer> modeLengths;
+    private Map<String, Integer> modeLengths;
+    private Map<String, Double> ghostSpeeds;
     private int numLives;
     private int points;
     private GameState gameState;
     private List<Renderable> collectables;
-    private GhostMode currentGhostMode;
+    private GhostModeState currentGhostMode;
 
-    public LevelImpl(JSONObject levelConfiguration,
-                     Maze maze) {
+    public LevelImpl(JSONObject levelConfiguration, Maze maze) {
         this.renderables = new ArrayList<>();
         this.maze = maze;
         this.tickCount = 0;
         this.observers = new ArrayList<>();
         this.modeLengths = new HashMap<>();
+        this.ghostSpeeds = new HashMap<>();
         this.gameState = GameState.READY;
-        this.currentGhostMode = GhostMode.SCATTER;
+        this.currentGhostMode = new ScatterMode();
         this.points = 0;
 
         initLevel(new LevelConfigurationReader(levelConfiguration));
     }
 
     private void initLevel(LevelConfigurationReader levelConfigurationReader) {
-        // Fetch all renderables for the level
         this.renderables = maze.getRenderables();
 
-        // Set up player
         if (!(maze.getControllable() instanceof Controllable)) {
             throw new ConfigurationParseException("Player entity is not controllable");
         }
@@ -66,21 +67,35 @@ public class LevelImpl implements Level {
         this.player.setSpeed(levelConfigurationReader.getPlayerSpeed());
         setNumLives(maze.getNumLives());
 
-        // Set up ghosts
         this.ghosts = maze.getGhosts().stream()
                 .map(element -> (Ghost) element)
                 .collect(Collectors.toList());
-        Map<GhostMode, Double> ghostSpeeds = levelConfigurationReader.getGhostSpeeds();
 
+        // Initialize ghost speeds
+        ghostSpeeds = levelConfigurationReader.getGhostSpeeds();
+        if (ghostSpeeds == null || ghostSpeeds.isEmpty()) {
+            throw new ConfigurationParseException("Ghost speeds are not properly initialized");
+        }
+
+        // Initialize mode lengths for ghost states
+        this.modeLengths = levelConfigurationReader.getGhostModeLengths();
+        if (modeLengths == null || modeLengths.isEmpty()) {
+            throw new ConfigurationParseException("Ghost mode lengths are not properly initialized");
+        }
+
+        // Set ghost speeds and modes
         for (Ghost ghost : this.ghosts) {
-            player.registerObserver(ghost);
             ghost.setSpeeds(ghostSpeeds);
             ghost.setGhostMode(this.currentGhostMode);
+            ghost.setModeLengths(modeLengths);
+            player.registerObserver(ghost);
+            System.out.println("Ghost Mode Lengths Set: " + modeLengths);
+            System.out.println("Ghost Speeds Set: " + ghostSpeeds);
         }
-        this.modeLengths = levelConfigurationReader.getGhostModeLengths();
-        // Set up collectables
-        this.collectables = new ArrayList<>(maze.getPellets());
 
+
+        // Initialize collectables
+        this.collectables = new ArrayList<>(maze.getPellets());
     }
 
     @Override
@@ -89,74 +104,74 @@ public class LevelImpl implements Level {
     }
 
     private List<DynamicEntity> getDynamicEntities() {
-        return renderables.stream().filter(e -> e instanceof DynamicEntity).map(e -> (DynamicEntity) e).collect(
-                Collectors.toList());
+        return renderables.stream()
+                .filter(e -> e instanceof DynamicEntity)
+                .map(e -> (DynamicEntity) e)
+                .collect(Collectors.toList());
     }
 
     private List<StaticEntity> getStaticEntities() {
-        return renderables.stream().filter(e -> e instanceof StaticEntity).map(e -> (StaticEntity) e).collect(
-                Collectors.toList());
+        return renderables.stream()
+                .filter(e -> e instanceof StaticEntity)
+                .map(e -> (StaticEntity) e)
+                .collect(Collectors.toList());
     }
 
     @Override
     public void tick() {
         if (this.gameState != GameState.IN_PROGRESS) {
-
             if (tickCount >= START_LEVEL_TIME) {
                 setGameState(GameState.IN_PROGRESS);
                 tickCount = 0;
             }
-
         } else {
+            handleGhostModeSwitch();
+            updatePlayerImage();
+            updateDynamicEntities();
+        }
+        tickCount++;
+    }
 
-            if (tickCount == modeLengths.get(currentGhostMode)) {
-
-                // update ghost mode
-                this.currentGhostMode = GhostMode.getNextGhostMode(currentGhostMode);
-                for (Ghost ghost : this.ghosts) {
-                    ghost.setGhostMode(this.currentGhostMode);
-                }
-
-                tickCount = 0;
+    private void handleGhostModeSwitch() {
+        int currentModeLength = modeLengths.getOrDefault(currentGhostMode.getClass().getSimpleName(), 0);
+        if (tickCount == currentModeLength) {
+            this.currentGhostMode = currentGhostMode.nextState();
+            for (Ghost ghost : this.ghosts) {
+                ghost.setGhostMode(this.currentGhostMode); // Update each ghost's mode
             }
+            tickCount = 0;
+        }
+    }
 
-            if (tickCount % Pacman.PACMAN_IMAGE_SWAP_TICK_COUNT == 0) {
-                this.player.switchImage();
-            }
+    private void updatePlayerImage() {
+        if (tickCount % Pacman.PACMAN_IMAGE_SWAP_TICK_COUNT == 0) {
+            this.player.switchImage();
+        }
+    }
 
-            // Update the dynamic entities
-            List<DynamicEntity> dynamicEntities = getDynamicEntities();
+    private void updateDynamicEntities() {
+        List<DynamicEntity> dynamicEntities = getDynamicEntities();
+        for (DynamicEntity dynamicEntity : dynamicEntities) {
+            maze.updatePossibleDirections(dynamicEntity);
+            dynamicEntity.update();
+            handleCollisions(dynamicEntity, dynamicEntities);
+        }
+    }
 
-            for (DynamicEntity dynamicEntity : dynamicEntities) {
-                maze.updatePossibleDirections(dynamicEntity);
-                dynamicEntity.update();
-            }
-
-            for (int i = 0; i < dynamicEntities.size(); ++i) {
-                DynamicEntity dynamicEntityA = dynamicEntities.get(i);
-
-                // handle collisions between dynamic entities
-                for (int j = i + 1; j < dynamicEntities.size(); ++j) {
-                    DynamicEntity dynamicEntityB = dynamicEntities.get(j);
-
-                    if (dynamicEntityA.collidesWith(dynamicEntityB) ||
-                            dynamicEntityB.collidesWith(dynamicEntityA)) {
-                        dynamicEntityA.collideWith(this, dynamicEntityB);
-                        dynamicEntityB.collideWith(this, dynamicEntityA);
-                    }
-                }
-
-                // handle collisions between dynamic entities and static entities
-                for (StaticEntity staticEntity : getStaticEntities()) {
-                    if (dynamicEntityA.collidesWith(staticEntity)) {
-                        dynamicEntityA.collideWith(this, staticEntity);
-                        PhysicsEngine.resolveCollision(dynamicEntityA, staticEntity);
-                    }
-                }
+    private void handleCollisions(DynamicEntity dynamicEntityA, List<DynamicEntity> dynamicEntities) {
+        for (DynamicEntity dynamicEntityB : dynamicEntities) {
+            if (dynamicEntityA != dynamicEntityB && dynamicEntityA.collidesWith(dynamicEntityB)) {
+                dynamicEntityA.collideWith(this, dynamicEntityB);
+                dynamicEntityB.collideWith(this, dynamicEntityA);
             }
         }
 
-        tickCount++;
+        for (StaticEntity staticEntity : getStaticEntities()) {
+            if (dynamicEntityA.collidesWith(staticEntity)) {
+                dynamicEntityA.collideWith(this, staticEntity);
+                PhysicsEngine.resolveCollision(dynamicEntityA, staticEntity);
+            }
+        }
     }
 
     @Override
@@ -244,9 +259,6 @@ public class LevelImpl implements Level {
         }
     }
 
-    /**
-     * Notifies observer of change in player's score
-     */
     public void notifyObserversWithScoreChange(int scoreChange) {
         for (LevelStateObserver observer : observers) {
             observer.updateScore(scoreChange);

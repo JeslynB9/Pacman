@@ -4,12 +4,13 @@ import javafx.scene.image.Image;
 import pacman.ConfigurationParseException;
 import pacman.model.entity.Renderable;
 import pacman.model.entity.dynamic.ghost.GhostImpl;
-import pacman.model.entity.dynamic.ghost.GhostMode;
+import pacman.model.entity.dynamic.ghost.state.ScatterMode;
 import pacman.model.entity.dynamic.ghost.strategy.*;
 import pacman.model.entity.dynamic.physics.*;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+
 
 /**
  * Concrete renderable factory for Ghost objects
@@ -26,7 +27,9 @@ public class GhostFactory implements RenderableFactory {
     private static final Image PINKY_IMAGE = new Image("maze/ghosts/pinky.png");
     private static Image GHOST_IMAGE = BLINKY_IMAGE;
     private ChaseMovementStrategy strategy;
+    private ScatterMode state = new ScatterMode();
     private Vector2D targetCorner;
+
 
     // Changed to use int for ghost start positions
     private static final int BLINKY_START_X = 160;
@@ -46,7 +49,6 @@ public class GhostFactory implements RenderableFactory {
     public Renderable createRenderable(
             Vector2D position // assuming position is still Vector2D
     ) {
-        try {
             Vector2D position1 = position.add(new Vector2D(4, -4)); // Assuming Vector2D accepts int values
 
             int x = (int) position.getX();
@@ -88,12 +90,8 @@ public class GhostFactory implements RenderableFactory {
                     GHOST_IMAGE,
                     boundingBox,
                     kinematicState,
-                    GhostMode.SCATTER,
                     targetCorner,
                     strategy);
-        } catch (Exception e) {
-            throw new ConfigurationParseException(
-                    String.format("Invalid ghost configuration | %s ", e));
-        }
+
     }
 }
