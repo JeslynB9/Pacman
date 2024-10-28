@@ -114,9 +114,6 @@ public class Pacman implements Controllable, PlayerPositionSubject {
     public void collideWith(Level level, Renderable renderable) {
         if (level.isCollectable(renderable)) {
             Collectable collectable = (Collectable) renderable;
-            if (collectable instanceof PowerPellet) {
-
-            }
             level.collect(collectable);
             collectable.collect();
         }

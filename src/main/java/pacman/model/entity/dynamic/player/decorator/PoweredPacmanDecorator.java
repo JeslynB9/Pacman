@@ -88,17 +88,28 @@ public class PoweredPacmanDecorator implements Controllable {
 
     @Override
     public void collideWith(Level level, Renderable renderable) {
-        pacman.collideWith(level, renderable);
+        pacman.collidesWith(renderable);
     }
 
     // Additional method for handling ghost collision while powered up
+    // Additional method for handling ghost collision while powered up
     public void collideWithGhost(Ghost ghost, Level level) {
         if (ghost.getGhostMode() instanceof FrightenedMode) {
-//            level.addPoints(scoreMultiplier);
-            scoreMultiplier *= 2; // Increase points for consecutive ghost eats
+            // Calculate score based on the number of ghosts eaten in Frightened Mode
+            int pointsAwarded = 200 * (int) Math.pow(2, level.getGhostsEatenInFrightenedMode());
+            level.addPoints(pointsAwarded);
+
+            // Increase counter in the level to track consecutive ghost eats
+            level.incrementGhostsEatenInFrightenedMode();
+
             ghost.reset(); // Respawn ghost in its starting position
+            System.out.println("Ghost eaten in FrightenedMode. Points awarded: " + pointsAwarded);
+        } else {
+            System.out.println("Ghost is not in FrightenedMode. Reverting to normal Pacman behavior."); // Debug statement
+            pacman.collideWith(level, ghost); // Delegate to normal Pacman's behavior
         }
     }
+
 
     // Pass-through methods for movement
     @Override
@@ -151,9 +162,5 @@ public class PoweredPacmanDecorator implements Controllable {
         pacman.notifyObservers();
     }
 
-    public Controllable unwrap() {
-        pacman.reset();
-        return pacman;
-    }
 }
 

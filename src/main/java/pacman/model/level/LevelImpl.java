@@ -143,15 +143,44 @@ public class LevelImpl implements Level {
                         ghost.setGhostMode(this.currentGhostMode); // Switch to Scatter or Chase
                     }
 
+                    ghostsEatenInFrightenedMode = 0;
+
                 }
             } else {
                 // Handle regular mode switching if not in Frightened mode
                 handleGhostModeSwitch();
             }
+
+            for (Ghost ghost : this.ghosts) {
+                if (player.collidesWith(ghost)) {
+                    if (player instanceof PoweredPacmanDecorator poweredPacman) {
+                        if (ghost.getGhostMode() instanceof FrightenedMode) {
+                            poweredPacman.collideWithGhost(ghost, this);
+                        } else {
+                            player = originalPacman;
+                        }
+                    }
+                }
+            }
+
             updatePlayerImage();
             updateDynamicEntities();
         }
         tickCount++;
+    }
+
+    public void addPoints(int pointsToAdd) {
+        this.points += pointsToAdd;
+        notifyObserversWithScoreChange(pointsToAdd); // Notify observers about the score change
+    }
+
+
+    public int getGhostsEatenInFrightenedMode() {
+        return ghostsEatenInFrightenedMode;
+    }
+
+    public void incrementGhostsEatenInFrightenedMode() {
+        ghostsEatenInFrightenedMode++;
     }
 
 
@@ -185,9 +214,13 @@ public class LevelImpl implements Level {
         for (DynamicEntity dynamicEntityB : dynamicEntities) {
             if (dynamicEntityA != dynamicEntityB && dynamicEntityA.collidesWith(dynamicEntityB)) {
                 if (isPlayer(dynamicEntityA) && dynamicEntityB instanceof Ghost ghost) {
-                    System.out.println("Collision detected with ghost"); // Debug to confirm collision detection
-                    // Use collideWith on player, which should be the PoweredPacmanDecorator
-                    player.collideWith(this, ghost);
+                    System.out.println("Collision detected with ghost");
+                    if (player instanceof PoweredPacmanDecorator poweredPacman) {
+                        poweredPacman.collideWithGhost(ghost, this);
+                    } else {
+                        // Use collideWith on player, which should be the PoweredPacmanDecorator
+                        player.collideWith(this, ghost);
+                    }
                 } else {
                     dynamicEntityA.collideWith(this, dynamicEntityB);
                     dynamicEntityB.collideWith(this, dynamicEntityA);
@@ -210,7 +243,7 @@ public class LevelImpl implements Level {
 
     @Override
     public boolean isCollectable(Renderable renderable) {
-        if (renderable instanceof PowerPellet) {
+        if (renderable instanceof PowerPellet && ((PowerPellet) renderable).isCollectable()) {
             frightenedModeTickCount = modeLengths.get("FrightenedMode");
             ghostsEatenInFrightenedMode = 0;
             for (Ghost ghost : ghosts) {
