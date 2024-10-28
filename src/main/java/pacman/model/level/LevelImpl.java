@@ -1,6 +1,5 @@
 package pacman.model.level;
 
-import javafx.scene.image.Image;
 import org.json.simple.JSONObject;
 import pacman.ConfigurationParseException;
 import pacman.model.engine.observer.GameState;
@@ -13,16 +12,15 @@ import pacman.model.entity.dynamic.ghost.state.ScatterMode;
 import pacman.model.entity.dynamic.physics.PhysicsEngine;
 import pacman.model.entity.dynamic.player.Controllable;
 import pacman.model.entity.dynamic.player.Pacman;
+import pacman.model.entity.dynamic.player.decorator.PoweredPacmanDecorator;
 import pacman.model.entity.staticentity.StaticEntity;
 import pacman.model.entity.staticentity.collectable.Collectable;
 import pacman.model.entity.staticentity.collectable.PowerPellet;
 import pacman.model.level.observer.LevelStateObserver;
 import pacman.model.maze.Maze;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import javax.swing.text.Position;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -45,6 +43,8 @@ public class LevelImpl implements Level {
     private List<Renderable> collectables;
     private GhostModeState currentGhostMode;
     private int frightenedModeTickCount = 0;
+    private Controllable originalPacman;
+    private int ghostsEatenInFrightenedMode = 0;
 
     public LevelImpl(JSONObject levelConfiguration, Maze maze) {
         this.renderables = new ArrayList<>();
@@ -66,7 +66,8 @@ public class LevelImpl implements Level {
         if (!(maze.getControllable() instanceof Controllable)) {
             throw new ConfigurationParseException("Player entity is not controllable");
         }
-        this.player = (Controllable) maze.getControllable();
+        this.originalPacman = (Controllable) maze.getControllable();
+        this.player = originalPacman;
         this.player.setSpeed(levelConfigurationReader.getPlayerSpeed());
         setNumLives(maze.getNumLives());
 
@@ -92,10 +93,9 @@ public class LevelImpl implements Level {
             ghost.setGhostMode(this.currentGhostMode);
             ghost.setModeLengths(modeLengths);
             player.registerObserver(ghost);
-            System.out.println("Ghost Mode Lengths Set: " + modeLengths);
-            System.out.println("Ghost Speeds Set: " + ghostSpeeds);
+//            System.out.println("Ghost Mode Lengths Set: " + modeLengths);
+//            System.out.println("Ghost Speeds Set: " + ghostSpeeds);
         }
-
 
         // Initialize collectables
         this.collectables = new ArrayList<>(maze.getPellets());
@@ -135,9 +135,14 @@ public class LevelImpl implements Level {
                     // End Frightened mode and return to regular mode sequence
                     this.currentGhostMode = new ScatterMode();
                     tickCount = 0; // Reset tickCount for normal mode sequence
+
+                    if (player instanceof PoweredPacmanDecorator) {
+                        player = originalPacman; // Switch back to the original Pacman
+                    }
                     for (Ghost ghost : this.ghosts) {
                         ghost.setGhostMode(this.currentGhostMode); // Switch to Scatter or Chase
                     }
+
                 }
             } else {
                 // Handle regular mode switching if not in Frightened mode
@@ -179,8 +184,14 @@ public class LevelImpl implements Level {
     private void handleCollisions(DynamicEntity dynamicEntityA, List<DynamicEntity> dynamicEntities) {
         for (DynamicEntity dynamicEntityB : dynamicEntities) {
             if (dynamicEntityA != dynamicEntityB && dynamicEntityA.collidesWith(dynamicEntityB)) {
-                dynamicEntityA.collideWith(this, dynamicEntityB);
-                dynamicEntityB.collideWith(this, dynamicEntityA);
+                if (isPlayer(dynamicEntityA) && dynamicEntityB instanceof Ghost ghost) {
+                    System.out.println("Collision detected with ghost"); // Debug to confirm collision detection
+                    // Use collideWith on player, which should be the PoweredPacmanDecorator
+                    player.collideWith(this, ghost);
+                } else {
+                    dynamicEntityA.collideWith(this, dynamicEntityB);
+                    dynamicEntityB.collideWith(this, dynamicEntityA);
+                }
             }
         }
 
@@ -201,8 +212,14 @@ public class LevelImpl implements Level {
     public boolean isCollectable(Renderable renderable) {
         if (renderable instanceof PowerPellet) {
             frightenedModeTickCount = modeLengths.get("FrightenedMode");
+            ghostsEatenInFrightenedMode = 0;
             for (Ghost ghost : ghosts) {
                 ghost.setGhostMode(new FrightenedMode());
+            }
+
+            if (player instanceof Pacman) {
+                player = new PoweredPacmanDecorator((Pacman) player);
+                System.out.println("PoweredPacmanDecorator applied"); // Debug to confirm decorator
             }
         }
         return maze.getPellets().contains(renderable) && ((Collectable) renderable).isCollectable();

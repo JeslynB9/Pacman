@@ -76,7 +76,7 @@ public class LevelConfigurationReader {
             throw new IllegalArgumentException("ghostSpeed configuration is null");
         }
 
-        System.out.println("Retrieved ghost speeds: " + ghostSpeeds);
+//        System.out.println("Retrieved ghost speeds: " + ghostSpeeds);
 
         return ghostSpeeds;
     }

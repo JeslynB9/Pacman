@@ -66,6 +66,11 @@ public class GhostImpl implements Ghost {
     }
 
     @Override
+    public GhostModeState getGhostMode() {
+        return this.currentMode;
+    }
+
+    @Override
     public Image getImage() {
         return image;
     }
@@ -142,6 +147,7 @@ public class GhostImpl implements Ghost {
     @Override
     public void setGhostMode(GhostModeState newState) {
         this.currentMode = newState;
+//        System.out.println("Changing state to: " + this.currentMode.getClass().getSimpleName());
         this.currentMode.enter(this); // Apply settings specific to this mode
     }
 
