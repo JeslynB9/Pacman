@@ -50,51 +50,51 @@ public class GhostFactory implements RenderableFactory {
     public Renderable createRenderable(
             Vector2D position // assuming position is still Vector2D
     ) {
-            Vector2D position1 = position.add(new Vector2D(4, -4)); // Assuming Vector2D accepts int values
+        Vector2D position1 = position.add(new Vector2D(4, -4)); // Assuming Vector2D accepts int values
 
-            int x = (int) position.getX();
-            int y = (int) position.getY();
+        int x = (int) position.getX();
+        int y = (int) position.getY();
 
-            // Check against the integer start positions
-            if (x == BLINKY_START_X && y == BLINKY_START_Y) {
-                GHOST_IMAGE = BLINKY_IMAGE;
-                strategy = new BlinkyChaseStrategy();
-                targetCorner = new Vector2D(RIGHT_X_POSITION_OF_MAP, TOP_Y_POSITION_OF_MAP);
-            } else if (x == PINKY_START_X && y == PINKY_START_Y) {
-                GHOST_IMAGE = PINKY_IMAGE;
-                strategy = new PinkyChaseStrategy();
-                targetCorner = new Vector2D(0, TOP_Y_POSITION_OF_MAP);
-            } else if (x == INKY_START_X && y == INKY_START_Y) {
-                GHOST_IMAGE = INKY_IMAGE;
-                strategy = new InkyChaseStrategy();
-                targetCorner = new Vector2D(RIGHT_X_POSITION_OF_MAP, BOTTOM_Y_POSITION_OF_MAP);
-            } else if (x == CLYDE_START_X && y == CLYDE_START_Y) {
-                GHOST_IMAGE = CLYDE_IMAGE;
-                strategy = new ClydeChaseStrategy();
-                targetCorner = new Vector2D(0, BOTTOM_Y_POSITION_OF_MAP);
-            } else {
-                throw new IllegalArgumentException("Unknown ghost type: " + position);
-            }
+        // Check against the integer start positions
+        if (x == BLINKY_START_X && y == BLINKY_START_Y) {
+            GHOST_IMAGE = BLINKY_IMAGE;
+            strategy = new BlinkyChaseStrategy();
+            targetCorner = new Vector2D(RIGHT_X_POSITION_OF_MAP, TOP_Y_POSITION_OF_MAP);
+        } else if (x == PINKY_START_X && y == PINKY_START_Y) {
+            GHOST_IMAGE = PINKY_IMAGE;
+            strategy = new PinkyChaseStrategy();
+            targetCorner = new Vector2D(0, TOP_Y_POSITION_OF_MAP);
+        } else if (x == INKY_START_X && y == INKY_START_Y) {
+            GHOST_IMAGE = INKY_IMAGE;
+            strategy = new InkyChaseStrategy();
+            targetCorner = new Vector2D(RIGHT_X_POSITION_OF_MAP, BOTTOM_Y_POSITION_OF_MAP);
+        } else if (x == CLYDE_START_X && y == CLYDE_START_Y) {
+            GHOST_IMAGE = CLYDE_IMAGE;
+            strategy = new ClydeChaseStrategy();
+            targetCorner = new Vector2D(0, BOTTOM_Y_POSITION_OF_MAP);
+        } else {
+            throw new IllegalArgumentException("Unknown ghost type: " + position);
+        }
 
-            // Create a bounding box using the new positions
-            BoundingBox boundingBox = new BoundingBoxImpl(
-                    position1,
-                    GHOST_IMAGE.getHeight(),
-                    GHOST_IMAGE.getWidth()
-            );
+        // Create a bounding box using the new positions
+        BoundingBox boundingBox = new BoundingBoxImpl(
+                position1,
+                GHOST_IMAGE.getHeight(),
+                GHOST_IMAGE.getWidth()
+        );
 
-            KinematicState kinematicState = new KinematicStateImpl.KinematicStateBuilder()
-                    .setPosition(position1)
-                    .build();
+        KinematicState kinematicState = new KinematicStateImpl.KinematicStateBuilder()
+                .setPosition(position1)
+                .build();
 
-            return new GhostImpl(
-                    GHOST_IMAGE,
-                    GHOST_IMAGE,
-                    FRIGHTENED_IMAGE,
-                    boundingBox,
-                    kinematicState,
-                    targetCorner,
-                    strategy);
+        return new GhostImpl(
+                GHOST_IMAGE,
+                GHOST_IMAGE,
+                FRIGHTENED_IMAGE,
+                boundingBox,
+                kinematicState,
+                targetCorner,
+                strategy);
 
     }
 }
