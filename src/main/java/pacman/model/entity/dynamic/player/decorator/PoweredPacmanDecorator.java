@@ -28,7 +28,7 @@ public class PoweredPacmanDecorator extends PacmanDecorator {
             System.out.println("Ghost eaten in FrightenedMode. Points awarded: " + pointsAwarded);
         } else {
             System.out.println("Ghost is not in FrightenedMode. Reverting to normal Pacman behavior.");
-            pacman.collideWith(level, ghost); // Delegate normal behavior
+            pacman.collideWith(level, ghost);
         }
     }
 }

@@ -277,4 +277,11 @@ public class GhostImpl implements Ghost {
         return this.movementStrategy;
     }
 
+    public Set<Direction> getPossibleDirections() {
+        return possibleDirections;
+    }
+
+    public KinematicState getKinematicState() {
+        return kinematicState;
+    }
 }
