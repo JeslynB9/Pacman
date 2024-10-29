@@ -35,7 +35,6 @@ public interface Ghost extends DynamicEntity, PlayerPositionObserver {
 
     GhostModeState getGhostMode();
 
-    void setVisible(boolean b);
-
     void setLayer(Layer layer);
+    void freeze();
 }

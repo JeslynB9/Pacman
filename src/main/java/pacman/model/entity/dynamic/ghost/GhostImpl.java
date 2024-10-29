@@ -36,7 +36,9 @@ public class GhostImpl implements Ghost {
     private int currentDirectionCount = 0;
     private final ChaseMovementStrategy movementStrategy;
     private long modeStartTime;
-    private boolean visible;
+    private static GhostImpl blinkyInstance;
+    private boolean isFrozen;
+    private long frozenStartTime;
 
     public GhostImpl(Image image, Image normalImage, Image frightenedImage, BoundingBox boundingBox, KinematicState kinematicState, Vector2D targetCorner, ChaseMovementStrategy strategy) {
         this.normalImage = normalImage;
@@ -53,8 +55,12 @@ public class GhostImpl implements Ghost {
         this.currentMode = new ScatterMode(); // Start in SCATTER mode
         this.currentMode.enter(this); // Initialize mode-specific settings
         this.modeStartTime = System.currentTimeMillis();
-        this.visible = true;
-        this.layer = Layer.FOREGROUND;
+        this.isFrozen = false;
+
+        // If this instance is Blinky, set the static reference
+        if (strategy instanceof BlinkyChaseStrategy) {
+            blinkyInstance = this;
+        }
     }
 
     @Override
@@ -71,10 +77,6 @@ public class GhostImpl implements Ghost {
 
     public void setLayer(Layer layer) {
         this.layer = layer;
-    }
-
-    public void setVisible(boolean visible) {
-        this.visible = visible;
     }
 
     @Override
@@ -102,6 +104,14 @@ public class GhostImpl implements Ghost {
 
     @Override
     public void update() {
+        if (isFrozen) {
+            // Check if 1 second has passed
+            if (System.currentTimeMillis() - frozenStartTime >= 1000) {
+                isFrozen = false; // Unfreeze the ghost
+            } else {
+                return; // Exit the update to prevent movement
+            }
+        }
         this.updateDirection();
         this.kinematicState.update();
         this.boundingBox.setTopLeft(this.kinematicState.getPosition());
@@ -222,6 +232,11 @@ public class GhostImpl implements Ghost {
         return this.boundingBox;
     }
 
+    public void freeze() {
+        this.isFrozen = true;
+        this.frozenStartTime = System.currentTimeMillis();
+    }
+
     @Override
     public void reset() {
         this.kinematicState = new KinematicStateImpl.KinematicStateBuilder()
@@ -232,7 +247,7 @@ public class GhostImpl implements Ghost {
         this.currentMode.enter(this); // Apply settings for SCATTER mode
         this.currentDirectionCount = minimumDirectionCount;
 
-        setLayer(Layer.FOREGROUND);
+        this.isFrozen = false;
     }
 
     @Override
@@ -255,7 +270,7 @@ public class GhostImpl implements Ghost {
     }
 
     public Vector2D getBlinkyPosition() {
-        return null; // Placeholder for Blinky’s position
+        return blinkyInstance != null ? blinkyInstance.getPosition() : null;
     }
 
     public ChaseMovementStrategy getMovementStrategy() {

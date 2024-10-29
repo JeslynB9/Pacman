@@ -22,17 +22,8 @@ public class PoweredPacmanDecorator extends PacmanDecorator {
             level.addPoints(pointsAwarded);
             level.incrementGhostsEatenInFrightenedMode();
 
-            // Make ghost invisible immediately
-            ghost.setLayer(Layer.INVISIBLE);
-
-            // Delay the respawn by 1 second (1000 ms)
-            Timer timer = new Timer();
-            timer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    ghost.reset(); // Respawn ghost after 1-second delay
-                }
-            }, 1000);
+            ghost.reset();
+            ghost.freeze();
 
             System.out.println("Ghost eaten in FrightenedMode. Points awarded: " + pointsAwarded);
         } else {
