@@ -4,6 +4,7 @@ import javafx.scene.image.Image;
 import pacman.model.entity.Renderable;
 import pacman.model.entity.dynamic.ghost.state.GhostModeState;
 import pacman.model.entity.dynamic.ghost.state.ScatterMode;
+import pacman.model.entity.dynamic.ghost.strategy.BlinkyChaseStrategy;
 import pacman.model.entity.dynamic.ghost.strategy.ChaseMovementStrategy;
 import pacman.model.entity.dynamic.physics.*;
 import pacman.model.level.Level;
@@ -17,7 +18,7 @@ import java.util.*;
 public class GhostImpl implements Ghost {
 
     private static final int minimumDirectionCount = 8;
-    private final Layer layer = Layer.FOREGROUND;
+    private Layer layer = Layer.FOREGROUND;
     private Image image;
     private Image normalImage;
     private Image frightenedImage;
@@ -35,6 +36,7 @@ public class GhostImpl implements Ghost {
     private int currentDirectionCount = 0;
     private final ChaseMovementStrategy movementStrategy;
     private long modeStartTime;
+    private boolean visible;
 
     public GhostImpl(Image image, Image normalImage, Image frightenedImage, BoundingBox boundingBox, KinematicState kinematicState, Vector2D targetCorner, ChaseMovementStrategy strategy) {
         this.normalImage = normalImage;
@@ -51,6 +53,8 @@ public class GhostImpl implements Ghost {
         this.currentMode = new ScatterMode(); // Start in SCATTER mode
         this.currentMode.enter(this); // Initialize mode-specific settings
         this.modeStartTime = System.currentTimeMillis();
+        this.visible = true;
+        this.layer = Layer.FOREGROUND;
     }
 
     @Override
@@ -63,6 +67,14 @@ public class GhostImpl implements Ghost {
 
     public Map<String, Integer> getModeLengths() {
         return this.modeLengths;
+    }
+
+    public void setLayer(Layer layer) {
+        this.layer = layer;
+    }
+
+    public void setVisible(boolean visible) {
+        this.visible = visible;
     }
 
     @Override
@@ -87,8 +99,6 @@ public class GhostImpl implements Ghost {
     public Image getNormalImage() {
         return this.normalImage;
     }
-
-
 
     @Override
     public void update() {
@@ -221,6 +231,8 @@ public class GhostImpl implements Ghost {
         this.currentMode = new ScatterMode(); // Reset to SCATTER mode
         this.currentMode.enter(this); // Apply settings for SCATTER mode
         this.currentDirectionCount = minimumDirectionCount;
+
+        setLayer(Layer.FOREGROUND);
     }
 
     @Override
@@ -243,7 +255,6 @@ public class GhostImpl implements Ghost {
     }
 
     public Vector2D getBlinkyPosition() {
-        // This method can be adjusted to retrieve Blinky's position if needed
         return null; // Placeholder for Blinky’s position
     }
 

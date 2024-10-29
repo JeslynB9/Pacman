@@ -6,6 +6,9 @@ import pacman.model.entity.dynamic.ghost.state.FrightenedMode;
 import pacman.model.entity.dynamic.player.Controllable;
 import pacman.model.level.Level;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 public class PoweredPacmanDecorator extends PacmanDecorator {
 
     public PoweredPacmanDecorator(Controllable pacman) {
@@ -18,7 +21,19 @@ public class PoweredPacmanDecorator extends PacmanDecorator {
             int pointsAwarded = 200 * (int) Math.pow(2, level.getGhostsEatenInFrightenedMode());
             level.addPoints(pointsAwarded);
             level.incrementGhostsEatenInFrightenedMode();
-            ghost.reset(); // Respawn ghost
+
+            // Make ghost invisible immediately
+            ghost.setLayer(Layer.INVISIBLE);
+
+            // Delay the respawn by 1 second (1000 ms)
+            Timer timer = new Timer();
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    ghost.reset(); // Respawn ghost after 1-second delay
+                }
+            }, 1000);
+
             System.out.println("Ghost eaten in FrightenedMode. Points awarded: " + pointsAwarded);
         } else {
             System.out.println("Ghost is not in FrightenedMode. Reverting to normal Pacman behavior.");
