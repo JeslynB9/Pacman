@@ -8,7 +8,7 @@ public interface PlayerPositionSubject {
     /**
      * Adds an observer to list of observers for subject
      *
-     * @param observe observer for PlayerPositionSubject
+     * @param observer observer for PlayerPositionSubject
      */
     void registerObserver(PlayerPositionObserver observer);
 

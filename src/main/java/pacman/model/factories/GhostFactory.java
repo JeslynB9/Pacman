@@ -1,15 +1,10 @@
 package pacman.model.factories;
 
 import javafx.scene.image.Image;
-import pacman.ConfigurationParseException;
 import pacman.model.entity.Renderable;
 import pacman.model.entity.dynamic.ghost.GhostImpl;
-import pacman.model.entity.dynamic.ghost.state.ScatterMode;
 import pacman.model.entity.dynamic.ghost.strategy.*;
 import pacman.model.entity.dynamic.physics.*;
-
-import java.util.HashMap;
-import java.util.Map;
 
 
 /**
@@ -28,7 +23,6 @@ public class GhostFactory implements RenderableFactory {
     private static final Image FRIGHTENED_IMAGE = new Image("maze/ghosts/frightened.png");
     private static Image GHOST_IMAGE = BLINKY_IMAGE;
     private ChaseMovementStrategy strategy;
-    private ScatterMode state = new ScatterMode();
     private Vector2D targetCorner;
 
 
@@ -41,16 +35,11 @@ public class GhostFactory implements RenderableFactory {
     private static final int INKY_START_Y = 224;
     private static final int CLYDE_START_X = 256;
     private static final int CLYDE_START_Y = 224;
-
-    private int getRandomNumber(int min, int max) {
-        return (int) ((Math.random() * (max - min)) + min);
-    }
-
     @Override
     public Renderable createRenderable(
-            Vector2D position // assuming position is still Vector2D
+            Vector2D position
     ) {
-        Vector2D position1 = position.add(new Vector2D(4, -4)); // Assuming Vector2D accepts int values
+        Vector2D position1 = position.add(new Vector2D(4, -4));
 
         int x = (int) position.getX();
         int y = (int) position.getY();
@@ -76,7 +65,6 @@ public class GhostFactory implements RenderableFactory {
             throw new IllegalArgumentException("Unknown ghost type: " + position);
         }
 
-        // Create a bounding box using the new positions
         BoundingBox boundingBox = new BoundingBoxImpl(
                 position1,
                 GHOST_IMAGE.getHeight(),

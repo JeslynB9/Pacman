@@ -12,7 +12,7 @@ public class ClydeChaseStrategy implements ChaseMovementStrategy{
         if (distance > 8) {
             return playerPosition;
         } else {
-            return targetCorner; // Clyde's scatter corner
+            return targetCorner;
         }
     }
 }

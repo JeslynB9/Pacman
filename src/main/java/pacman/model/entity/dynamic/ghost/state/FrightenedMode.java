@@ -19,7 +19,7 @@ public class FrightenedMode implements GhostModeState {
             return getRandomDirection();
         } else {
             // Continue in the current direction
-            return ghost.getKinematicState().getPosition(); // stay on current path
+            return ghost.getKinematicState().getPosition();
         }
     }
 
@@ -44,23 +44,7 @@ public class FrightenedMode implements GhostModeState {
             throw new IllegalStateException("Speeds map is not set for ghost: " + ghost);
         }
 
-//        System.out.println("Entering frightened mode for ghost: " + ghost);
-//
-//        // Check if "FRIGHTENED" key exists
-//        if (!ghost.getSpeeds().containsKey("FRIGHTENED")) {
-//            System.out.println("Key 'FRIGHTENED' does not exist in speeds map for ghost: " + ghost);
-//            return; // Return early if the key is not present
-//        }
-
         Double frightenedSpeed = ghost.getSpeeds().get("FRIGHTENED");
-
-        // Log the retrieved speed
-        if (frightenedSpeed == null) {
-            System.out.println("Frightened speed is not set for ghost: " + ghost);
-            return; // Return early if frightenedSpeed is null
-        }
-
-//        System.out.println("Retrieved frightened speed: " + frightenedSpeed);
 
         ghost.setSpeed(frightenedSpeed);
         ghost.setImage(ghost.getFrightenedImage());
