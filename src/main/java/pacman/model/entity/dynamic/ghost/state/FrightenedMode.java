@@ -41,10 +41,20 @@ public class FrightenedMode implements GhostModeState {
     public void enter(GhostImpl ghost) {
         // Check if the speeds map is null
         if (ghost.getSpeeds() == null) {
-            throw new IllegalStateException("Speeds map is not set for ghost: " + ghost);
+//            System.out.println("Speeds map is not set for ghost: " + ghost);
+        }
+
+        if (!ghost.getSpeeds().containsKey("FRIGHTENED")) {
+//            System.out.println("Key 'FRIGHTENED' does not exist in speeds map for ghost: " + ghost);
+            return;
         }
 
         Double frightenedSpeed = ghost.getSpeeds().get("FRIGHTENED");
+
+        if (frightenedSpeed == null) {
+//            System.out.println("Frightened speed is not set for ghost: " + ghost);
+            return;
+        }
 
         ghost.setSpeed(frightenedSpeed);
         ghost.setImage(ghost.getFrightenedImage());

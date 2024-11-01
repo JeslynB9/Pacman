@@ -15,17 +15,22 @@ public class ScatterMode implements GhostModeState {
     public void enter(GhostImpl ghost) {
         this.ghost = ghost;
 
-        // Check if the speeds map is null
-        if (ghost.getSpeeds() == null) {
-            throw new IllegalStateException("Speeds map is not set for ghost: " + ghost);
+//        System.out.println("Entering scatter mode for ghost: " + ghost);
+
+        // Check if "SCATTER" key exists
+        if (!ghost.getSpeeds().containsKey("SCATTER")) {
+//            System.out.println("Key 'SCATTER' does not exist in speeds map for ghost: " + ghost);
+            return;
         }
-
         Double scatterSpeed = ghost.getSpeeds().get("SCATTER");
-
-
+        // Log the retrieved speed
+        if (scatterSpeed == null) {
+//            System.out.println("Scatter speed is not set for ghost: " + ghost);
+            return;
+        }
+//        System.out.println("Retrieved scatter speed: " + scatterSpeed);
         ghost.setSpeed(scatterSpeed);
         ghost.setImage(ghost.getNormalImage());
-
     }
 
 

@@ -20,10 +20,20 @@ public class ChaseMode implements GhostModeState {
     public void enter(GhostImpl ghost) {
         // Check if the speeds map is null
         if (ghost.getSpeeds() == null) {
-            throw new IllegalStateException("Speeds map is not set for ghost: " + ghost);
+//            System.out.println("Speeds map is not set for ghost: " + ghost);
+        }
+
+        if (!ghost.getSpeeds().containsKey("CHASE")) {
+//            System.out.println("Key 'CHASE' does not exist in speeds map for ghost: " + ghost);
+            return;
         }
 
         Double chaseSpeed = ghost.getSpeeds().get("CHASE");
+
+        if (chaseSpeed == null) {
+//            System.out.println("Chase speed is not set for ghost: " + ghost);
+            return;
+        }
 
         ghost.setSpeed(chaseSpeed);
         ghost.setImage(ghost.getNormalImage());
